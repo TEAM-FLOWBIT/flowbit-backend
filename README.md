@@ -1,4 +1,4 @@
 
 ### 아키텍처구조도
 
-<img width="955" alt="image" src="https://github.com/user-attachments/assets/862559bf-00aa-4c33-b5bb-573f4c49198f" />
+<img width="1800" alt="image" src="https://github.com/user-attachments/assets/4409a4e3-3fab-43d1-a7db-364ed4894451" />
