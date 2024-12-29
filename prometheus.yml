@@ -1,0 +1,31 @@
+global:
+  scrape_interval: 15s  # 기본 스크랩 간격
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus 자체 메트릭
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # user-service 메트릭 (apigateway를 통해 접근)
+  - job_name: "user-service"
+    metrics_path: '/user-service/actuator/prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["apigateway:8000"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "user-service"
+
+  # board-service 메트릭 (apigateway를 통해 접근)
+  - job_name: "board-service"
+    metrics_path: '/board-service/actuator/prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["apigateway:8000"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "board-service"

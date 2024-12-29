@@ -1,0 +1,140 @@
+version: "3.9"
+services:
+  discovery-service:
+    build:
+      context: ./DISCOVERY_SERVICE_MSA
+      dockerfile: dockerfile
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      - TZ=Asia/Seoul
+    networks:
+      - msa_network
+    restart: always
+  config-service:
+    build:
+      context: ./CONFIG_SERVER_MSA
+      dockerfile: dockerfile-dev
+    container_name: config-service
+    depends_on:
+      - discovery-service
+    ports:
+      - "8888:8888"
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - ./CONFIG_SERVER_MSA/apiEncryptionKey.jks:/apiEncryptionKey.jks
+    networks:
+      - msa_network
+    restart: always
+  apigateway:
+    build:
+      context: ./API_GATEWAY_SERVICE_MSA
+      dockerfile: dockerfile-dev
+    container_name: apigateway
+    depends_on:
+      - config-service
+    ports:
+      - "8000:8000"
+    environment:
+      - TZ=Asia/Seoul
+      - CONFIG_SERVER_URL=http://config-service:8888
+    networks:
+      - msa_network
+    restart: always
+  user-service:
+    build:
+      context: ./USER_SERVICE_MSA
+      dockerfile: dockerfile-dev
+    container_name: user-service
+    depends_on:
+      - apigateway
+    environment:
+      - TZ=Asia/Seoul
+      - CONFIG_SERVER_URL=http://config-service:8888
+      - REDIS_HOST=redis
+      - MYSQL_HOST=mysql
+    networks:
+      - msa_network
+    restart: always
+  board-service:
+    build:
+      context: ./BOARD_SERVICE_MSA
+      dockerfile: dockerfile-dev
+    container_name: board-service
+    depends_on:
+      - user-service
+    environment:
+      - TZ=Asia/Seoul
+      - CONFIG_SERVER_URL=http://config-service:8888
+      - REDIS_HOST=redis
+      - MYSQL_HOST=mysql
+    networks:
+      - msa_network
+    restart: always
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=flowbit
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - msa_network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - msa_network
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # 메시지 브로커 포트
+      - "15672:15672"  # 관리 UI 포트
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - msa_network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # 동일한 경로에 있는 prometheus.yml 파일 사용
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: always
+    networks:
+      - msa_network
+
+  grafana:
+    image: "grafana/grafana"
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana:/config_files # 동일한 경로에 grafana 설정 폴더
+    restart: always
+    depends_on:
+      - prometheus
+    privileged: true
+    networks:
+      - msa_network
+
+networks:
+  msa_network:
+    external: true
+
+
