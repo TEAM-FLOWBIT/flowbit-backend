@@ -1,5 +1,6 @@
 <img width="1209" alt="image" src="https://github.com/user-attachments/assets/72aee23d-a9d5-4e55-9cd3-f87ade6e2c01" />
 
+# 플로우빗 (http://flowbit.co.kr)
 
 ### 프로젝트 소개
 - FLOWBIT은 국내 유일의 무료 비트코인 예측 정보 제공 서비스입니다.
